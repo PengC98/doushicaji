@@ -25,8 +25,6 @@ void ControlModel::init(RobotModel* robotModel){
     pRobotModel=robotModel;
     autoAim = new AutoAim(1280, 720`);
     //配置文件
-    cv::FileStorage f("../res/main_config.yaml", cv::FileStorage::READ);
-    f["enemy_is_red"] >> mEnemyIsRed;//自瞄敌方颜色
     f.release();
     usleep(1000000);//等待1s，等摄像头稳定
     //初始模式初始化
@@ -44,18 +42,4 @@ void ControlModel::processFSM(){
 
 }
 
-void ControlModel::Aim(){
-        Mat src;
-        Point2f current_angle;
-        UsbCaptureWithThread cap = pRobotModel->getpUsbCapture();
-        if(cap.getImg(src)!=0) cout<<"src is error"<<endl;
-        SerialInterface *interface = pRobotModel->getpSerialInterface();
-        interface->getAbsYunTaiDelta();
-        current_angle.x = pRobotModel->getCurrentPitch();
-        current_angle.y = pRobotModel->getCurrentYaw();
-        cout<<current_angle<<endl;
-        Point2f angle;
-        if(autoAim->aim(src, current_angle.x, current_angle.y, angle,0.0)==BaseAim::AIM_TARGET_FOUND){
-            interface->YunTaiDeltaSet(angle.x, angle.y);
-        }
 }

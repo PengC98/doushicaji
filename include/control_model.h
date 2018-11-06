@@ -23,9 +23,8 @@ private:
 private:
     RobotModel* pRobotModel;
     //相关临时变量
-    bool mEnemyIsRed;
 private:
-    void Aim();
+
 };
 
 #endif //RMDEMO_CONTROL_MODEL_H
