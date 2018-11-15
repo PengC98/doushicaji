@@ -57,7 +57,7 @@ public:
     Use unless you want to do other stuff during takeoff - this will block
     the main thread.
     */
-    bool Takeoff(DJI::OSDK::Vehicle* vehiclePtr, int timeout = 1);
+    bool Takeoff( int timeout = 1);
 
 
     /** Very simple calculation of local NED offset between two pairs of GPS
@@ -65,8 +65,8 @@ public:
     *
     * Accurate when distances are small.
     */
-    bool Land(DJI::OSDK::Vehicle* vehiclePtr, int timeout = 1);
-
+    bool Land( int timeout = 1);
+    void movebyVelocity(float32_t Vx, float32_t Vy, float32_t Vz, float32_t yawRate);
     /** Position Control. Allows you to set an offset from your current
     *   location. The aircraft will move to that position and stay there.
     *   Typical use would be as a building block in an outer loop that does not
@@ -75,10 +75,11 @@ public:
     *   setpoints and use attitude control or convert to velocity setpoints
     *   and use velocity control.
     */
-    bool moveByPositionOffset(DJI::OSDK::Vehicle *vehicle, float xOffsetDesired,
-                          float yOffsetDesired, float zOffsetDesired,
-                          float yawDesired, float posThresholdInM = 0.2,
-                          float yawThresholdInDeg = 1.0);
+    void moveByPositionOffset(float32_t x, float32_t y,float32_t z,float32_t Yaw);
+    bool moveByPositionOffset_block(float xOffsetDesired,
+                     float yOffsetDesired, float zOffsetDesired,
+                     float yawDesired, float posThresholdInM,
+                   float yawThresholdInDeg);
    
 
 };

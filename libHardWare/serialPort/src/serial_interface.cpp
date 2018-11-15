@@ -226,17 +226,17 @@ void localOffsetFromGpsOffset(Vehicle* vehicle, Telemetry::Vector3f& deltaNed,
 
 
 
-bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
+bool SerialInterface::Takeoff( int timeout)
 {
   //@todo: remove this once the getErrorCode function signature changes
   char func[50];
   int  pkgIndex;
 
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
     // Telemetry: Verify the subscription
     ACK::ErrorCode subscribeStatus;
-    subscribeStatus = vehicle->subscribe->verify(timeout);
+    subscribeStatus = mVehicle->subscribe->verify(timeout);
     if (ACK::getError(subscribeStatus) != ACK::SUCCESS)
     {
       ACK::getErrorCodeMessage(subscribeStatus, func);
@@ -251,24 +251,24 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
     int  numTopic        = sizeof(topicList10Hz) / sizeof(topicList10Hz[0]);
     bool enableTimestamp = false;
 
-    bool pkgStatus = vehicle->subscribe->initPackageFromTopicList(
+    bool pkgStatus = mVehicle->subscribe->initPackageFromTopicList(
       pkgIndex, numTopic, topicList10Hz, enableTimestamp, freq);
     if (!(pkgStatus))
     {
       return pkgStatus;
     }
-    subscribeStatus = vehicle->subscribe->startPackage(pkgIndex, timeout);
+    subscribeStatus = mVehicle->subscribe->startPackage(pkgIndex, timeout);
     if (ACK::getError(subscribeStatus) != ACK::SUCCESS)
     {
       ACK::getErrorCodeMessage(subscribeStatus, func);
       // Cleanup before return
-      vehicle->subscribe->removePackage(pkgIndex, timeout);
+      mVehicle->subscribe->removePackage(pkgIndex, timeout);
       return false;
     }
   }
 
   // Start takeoff
-  ACK::ErrorCode takeoffStatus = vehicle->control->takeoff(timeout);
+  ACK::ErrorCode takeoffStatus = mVehicle->control->takeoff(timeout);
   if (ACK::getError(takeoffStatus) != ACK::SUCCESS)
   {
     ACK::getErrorCodeMessage(takeoffStatus, func);
@@ -279,11 +279,11 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
   int motorsNotStarted = 0;
   int timeoutCycles    = 20;
 
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
-    while (vehicle->subscribe->getValue<TOPIC_STATUS_FLIGHT>() !=
+    while (mVehicle->subscribe->getValue<TOPIC_STATUS_FLIGHT>() !=
              VehicleStatus::FlightStatus::ON_GROUND &&
-           vehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
+           mVehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
              VehicleStatus::DisplayMode::MODE_ENGINE_START &&
            motorsNotStarted < timeoutCycles)
     {
@@ -295,9 +295,9 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
     {
       std::cout << "Takeoff failed. Motors are not spinning." << std::endl;
       // Cleanup
-      if (!vehicle->isM100() && !vehicle->isLegacyM600())
+      if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
       {
-        vehicle->subscribe->removePackage(0, timeout);
+       mVehicle->subscribe->removePackage(0, timeout);
       }
       return false;
     }
@@ -306,9 +306,9 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
       std::cout << "Motors spinning...\n";
     }
   }
-  else if (vehicle->isLegacyM600())
+  else if (mVehicle->isLegacyM600())
   {
-    while ((vehicle->broadcast->getStatus().flight <
+    while ((mVehicle->broadcast->getStatus().flight <
             DJI::OSDK::VehicleStatus::FlightStatus::ON_GROUND) &&
            motorsNotStarted < timeoutCycles)
     {
@@ -323,7 +323,7 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
   }
   else // M100
   {
-    while ((vehicle->broadcast->getStatus().flight <
+    while ((mVehicle->broadcast->getStatus().flight <
             DJI::OSDK::VehicleStatus::M100FlightStatus::TAKEOFF) &&
            motorsNotStarted < timeoutCycles)
     {
@@ -341,13 +341,13 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
   int stillOnGround = 0;
   timeoutCycles     = 110;
 
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
-    while (vehicle->subscribe->getValue<TOPIC_STATUS_FLIGHT>() !=
+    while (mVehicle->subscribe->getValue<TOPIC_STATUS_FLIGHT>() !=
              VehicleStatus::FlightStatus::IN_AIR &&
-           (vehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
+           (mVehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
               VehicleStatus::DisplayMode::MODE_ASSISTED_TAKEOFF ||
-            vehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
+            mVehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
               VehicleStatus::DisplayMode::MODE_AUTO_TAKEOFF) &&
            stillOnGround < timeoutCycles)
     {
@@ -361,9 +361,9 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
                    "motors are spinning."
                 << std::endl;
       // Cleanup
-      if (!vehicle->isM100() && !vehicle->isLegacyM600())
+      if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
       {
-        vehicle->subscribe->removePackage(0, timeout);
+        mVehicle->subscribe->removePackage(0, timeout);
       }
       return false;
     }
@@ -372,9 +372,9 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
       std::cout << "Ascending...\n";
     }
   }
-  else if (vehicle->isLegacyM600())
+  else if (mVehicle->isLegacyM600())
   {
-    while ((vehicle->broadcast->getStatus().flight <
+    while ((mVehicle->broadcast->getStatus().flight <
             DJI::OSDK::VehicleStatus::FlightStatus::IN_AIR) &&
            stillOnGround < timeoutCycles)
     {
@@ -389,7 +389,7 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
   }
   else // M100
   {
-    while ((vehicle->broadcast->getStatus().flight !=
+    while ((mVehicle->broadcast->getStatus().flight !=
             DJI::OSDK::VehicleStatus::M100FlightStatus::IN_AIR_STANDBY) &&
            stillOnGround < timeoutCycles)
     {
@@ -404,21 +404,21 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
   }
 
   // Final check: Finished takeoff
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
-    while (vehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() ==
+    while (mVehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() ==
              VehicleStatus::DisplayMode::MODE_ASSISTED_TAKEOFF ||
-           vehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() ==
+           mVehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() ==
              VehicleStatus::DisplayMode::MODE_AUTO_TAKEOFF)
     {
       sleep(1);
     }
 
-    if (!vehicle->isM100() && !vehicle->isLegacyM600())
+    if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
     {
-      if (vehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
+      if (mVehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
             VehicleStatus::DisplayMode::MODE_P_GPS ||
-          vehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
+          mVehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
             VehicleStatus::DisplayMode::MODE_ATTITUDE)
       {
         std::cout << "Successful takeoff!\n";
@@ -428,7 +428,7 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
         std::cout
           << "Takeoff finished, but the aircraft is in an unexpected mode. "
              "Please connect DJI GO.\n";
-        vehicle->subscribe->removePackage(0, timeout);
+        mVehicle->subscribe->removePackage(0, timeout);
         return false;
       }
     }
@@ -438,12 +438,12 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
     float32_t                 delta;
     Telemetry::GlobalPosition currentHeight;
     Telemetry::GlobalPosition deltaHeight =
-      vehicle->broadcast->getGlobalPosition();
+      mVehicle->broadcast->getGlobalPosition();
 
     do
     {
       sleep(4);
-      currentHeight = vehicle->broadcast->getGlobalPosition();
+      currentHeight = mVehicle->broadcast->getGlobalPosition();
       delta         = fabs(currentHeight.altitude - deltaHeight.altitude);
       deltaHeight.altitude = currentHeight.altitude;
     } while (delta >= 0.009);
@@ -452,9 +452,9 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
   }
 
   // Cleanup
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
-    ACK::ErrorCode ack = vehicle->subscribe->removePackage(pkgIndex, timeout);
+    ACK::ErrorCode ack = mVehicle->subscribe->removePackage(pkgIndex, timeout);
     if (ACK::getError(ack))
     {
       std::cout
@@ -465,17 +465,17 @@ bool SerialInterface::Takeoff(Vehicle* vehicle, int timeout)
 
   return true;
 }
-bool SerialInterface::Land(Vehicle* vehicle, int timeout)
+bool SerialInterface::Land( int timeout)
 {
   //@todo: remove this once the getErrorCode function signature changes
   char func[50];
   int  pkgIndex;
 
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
     // Telemetry: Verify the subscription
     ACK::ErrorCode subscribeStatus;
-    subscribeStatus = vehicle->subscribe->verify(timeout);
+    subscribeStatus = mVehicle->subscribe->verify(timeout);
     if (ACK::getError(subscribeStatus) != ACK::SUCCESS)
     {
       ACK::getErrorCodeMessage(subscribeStatus, func);
@@ -489,24 +489,24 @@ bool SerialInterface::Land(Vehicle* vehicle, int timeout)
                                   TOPIC_STATUS_DISPLAYMODE };
     int  numTopic        = sizeof(topicList10Hz) / sizeof(topicList10Hz[0]);
     bool enableTimestamp = false;
-    bool pkgStatus = vehicle->subscribe->initPackageFromTopicList(
+    bool pkgStatus = mVehicle->subscribe->initPackageFromTopicList(
       pkgIndex, numTopic, topicList10Hz, enableTimestamp, freq);
     if (!(pkgStatus))
     {
       return pkgStatus;
     }
-    subscribeStatus = vehicle->subscribe->startPackage(pkgIndex, timeout);
+    subscribeStatus = mVehicle->subscribe->startPackage(pkgIndex, timeout);
     if (ACK::getError(subscribeStatus) != ACK::SUCCESS)
     {
       ACK::getErrorCodeMessage(subscribeStatus, func);
       // Cleanup before return
-      vehicle->subscribe->removePackage(pkgIndex, timeout);
+      mVehicle->subscribe->removePackage(pkgIndex, timeout);
       return false;
     }
   }
 
   // Start landing
-  ACK::ErrorCode landingStatus = vehicle->control->land(timeout);
+  ACK::ErrorCode landingStatus = mVehicle->control->land(timeout);
   if (ACK::getError(landingStatus) != ACK::SUCCESS)
   {
     ACK::getErrorCodeMessage(landingStatus, func);
@@ -517,9 +517,9 @@ bool SerialInterface::Land(Vehicle* vehicle, int timeout)
   int landingNotStarted = 0;
   int timeoutCycles     = 20;
 
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
-    while (vehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
+    while (mVehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
              VehicleStatus::DisplayMode::MODE_AUTO_LANDING &&
            landingNotStarted < timeoutCycles)
     {
@@ -527,9 +527,9 @@ bool SerialInterface::Land(Vehicle* vehicle, int timeout)
       usleep(100000);
     }
   }
-  else if (vehicle->isM100())
+  else if (mVehicle->isM100())
   {
-    while (vehicle->broadcast->getStatus().flight !=
+    while (mVehicle->broadcast->getStatus().flight !=
              DJI::OSDK::VehicleStatus::M100FlightStatus::LANDING &&
            landingNotStarted < timeoutCycles)
     {
@@ -542,7 +542,7 @@ bool SerialInterface::Land(Vehicle* vehicle, int timeout)
   {
     std::cout << "Landing failed. Aircraft is still in the air." << std::endl;
     // Cleanup before return
-    ACK::ErrorCode ack = vehicle->subscribe->removePackage(pkgIndex, timeout);
+    ACK::ErrorCode ack = mVehicle->subscribe->removePackage(pkgIndex, timeout);
     if (ACK::getError(ack))
     {
       std::cout << "Error unsubscribing; please restart the drone/FC to get "
@@ -556,19 +556,19 @@ bool SerialInterface::Land(Vehicle* vehicle, int timeout)
   }
 
   // Second check: Finished landing
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
-    while (vehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() ==
+    while (mVehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() ==
              VehicleStatus::DisplayMode::MODE_AUTO_LANDING &&
-           vehicle->subscribe->getValue<TOPIC_STATUS_FLIGHT>() ==
+           mVehicle->subscribe->getValue<TOPIC_STATUS_FLIGHT>() ==
              VehicleStatus::FlightStatus::IN_AIR)
     {
       sleep(1);
     }
 
-    if (vehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
+    if (mVehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
           VehicleStatus::DisplayMode::MODE_P_GPS ||
-        vehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
+        mVehicle->subscribe->getValue<TOPIC_STATUS_DISPLAYMODE>() !=
           VehicleStatus::DisplayMode::MODE_ATTITUDE)
     {
       std::cout << "Successful landing!\n";
@@ -578,7 +578,7 @@ bool SerialInterface::Land(Vehicle* vehicle, int timeout)
       std::cout
         << "Landing finished, but the aircraft is in an unexpected mode. "
            "Please connect DJI GO.\n";
-      ACK::ErrorCode ack = vehicle->subscribe->removePackage(pkgIndex, timeout);
+      ACK::ErrorCode ack = mVehicle->subscribe->removePackage(pkgIndex, timeout);
       if (ACK::getError(ack))
       {
         std::cout << "Error unsubscribing; please restart the drone/FC to get "
@@ -587,9 +587,9 @@ bool SerialInterface::Land(Vehicle* vehicle, int timeout)
       return false;
     }
   }
-  else if (vehicle->isLegacyM600())
+  else if (mVehicle->isLegacyM600())
   {
-    while (vehicle->broadcast->getStatus().flight >
+    while (mVehicle->broadcast->getStatus().flight >
            DJI::OSDK::VehicleStatus::FlightStatus::STOPED)
     {
       sleep(1);
@@ -599,7 +599,7 @@ bool SerialInterface::Land(Vehicle* vehicle, int timeout)
     do
     {
       sleep(2);
-      gp = vehicle->broadcast->getGlobalPosition();
+      gp = mVehicle->broadcast->getGlobalPosition();
     } while (gp.altitude != 0);
 
     if (gp.altitude != 0)
@@ -616,7 +616,7 @@ bool SerialInterface::Land(Vehicle* vehicle, int timeout)
   }
   else // M100
   {
-    while (vehicle->broadcast->getStatus().flight ==
+    while (mVehicle->broadcast->getStatus().flight ==
            DJI::OSDK::VehicleStatus::M100FlightStatus::FINISHING_LANDING)
     {
       sleep(1);
@@ -626,7 +626,7 @@ bool SerialInterface::Land(Vehicle* vehicle, int timeout)
     do
     {
       sleep(2);
-      gp = vehicle->broadcast->getGlobalPosition();
+      gp = mVehicle->broadcast->getGlobalPosition();
     } while (gp.altitude != 0);
 
     if (gp.altitude != 0)
@@ -643,9 +643,9 @@ bool SerialInterface::Land(Vehicle* vehicle, int timeout)
   }
 
   // Cleanup
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
-    ACK::ErrorCode ack = vehicle->subscribe->removePackage(pkgIndex, timeout);
+    ACK::ErrorCode ack = mVehicle->subscribe->removePackage(pkgIndex, timeout);
     if (ACK::getError(ack))
     {
       std::cout
@@ -656,8 +656,18 @@ bool SerialInterface::Land(Vehicle* vehicle, int timeout)
 
   return true;
 }
+void SerialInterface::moveByPositionOffset(float32_t x, float32_t y,float32_t z,float32_t Yaw){
+  mVehicle->control->positionAndYawCtrl(x,y,z,Yaw);
 
-bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesired,
+}
+void SerialInterface::movebyVelocity(float32_t x, float32_t y,float32_t z,float32_t Yaw){
+  mVehicle->control->velocityAndYawRateCtrl(x,y,z,Yaw);
+
+}
+
+
+
+bool SerialInterface::moveByPositionOffset_block( float xOffsetDesired,
                      float yOffsetDesired, float zOffsetDesired,
                      float yawDesired, float posThresholdInM,
                      float yawThresholdInDeg)
@@ -676,11 +686,11 @@ bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesire
   //@todo: remove this once the getErrorCode function signature changes
   char func[50];
 
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
     // Telemetry: Verify the subscription
     ACK::ErrorCode subscribeStatus;
-    subscribeStatus = vehicle->subscribe->verify(responseTimeout);
+    subscribeStatus = mVehicle->subscribe->verify(responseTimeout);
     if (ACK::getError(subscribeStatus) != ACK::SUCCESS)
     {
       ACK::getErrorCodeMessage(subscribeStatus, func);
@@ -695,28 +705,28 @@ bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesire
     int       numTopic = sizeof(topicList50Hz) / sizeof(topicList50Hz[0]);
     bool      enableTimestamp = false;
 
-    bool pkgStatus = vehicle->subscribe->initPackageFromTopicList(
+    bool pkgStatus = mVehicle->subscribe->initPackageFromTopicList(
       pkgIndex, numTopic, topicList50Hz, enableTimestamp, freq);
     if (!(pkgStatus))
     {
       return pkgStatus;
     }
     subscribeStatus =
-      vehicle->subscribe->startPackage(pkgIndex, responseTimeout);
+      mVehicle->subscribe->startPackage(pkgIndex, responseTimeout);
     if (ACK::getError(subscribeStatus) != ACK::SUCCESS)
     {
       ACK::getErrorCodeMessage(subscribeStatus, func);
       // Cleanup before return
-      vehicle->subscribe->removePackage(pkgIndex, responseTimeout);
+      mVehicle->subscribe->removePackage(pkgIndex, responseTimeout);
       return false;
     }
 
     // Also, since we don't have a source for relative height through subscription,
     // start using broadcast height
-    if (!startGlobalPositionBroadcast(vehicle))
+    if (!startGlobalPositionBroadcast(mVehicle))
     {
       // Cleanup before return
-      vehicle->subscribe->removePackage(pkgIndex, responseTimeout);
+      mVehicle->subscribe->removePackage(pkgIndex, responseTimeout);
       return false;
     }
   }
@@ -736,22 +746,22 @@ bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesire
   // Convert position offset from first position to local coordinates
   Telemetry::Vector3f localOffset;
 
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
-    currentSubscriptionGPS = vehicle->subscribe->getValue<TOPIC_GPS_FUSED>();
+    currentSubscriptionGPS = mVehicle->subscribe->getValue<TOPIC_GPS_FUSED>();
     originSubscriptionGPS  = currentSubscriptionGPS;
-    localOffsetFromGpsOffset(vehicle, localOffset,
+    localOffsetFromGpsOffset(mVehicle, localOffset,
                              static_cast<void*>(&currentSubscriptionGPS),
                              static_cast<void*>(&originSubscriptionGPS));
 
     // Get the broadcast GP since we need the height for zCmd
-    currentBroadcastGP = vehicle->broadcast->getGlobalPosition();
+    currentBroadcastGP = mVehicle->broadcast->getGlobalPosition();
   }
   else
   {
-    currentBroadcastGP = vehicle->broadcast->getGlobalPosition();
+    currentBroadcastGP = mVehicle->broadcast->getGlobalPosition();
     originBroadcastGP  = currentBroadcastGP;
-    localOffsetFromGpsOffset(vehicle, localOffset,
+    localOffsetFromGpsOffset(mVehicle, localOffset,
                              static_cast<void*>(&currentBroadcastGP),
                              static_cast<void*>(&originBroadcastGP));
   }
@@ -773,14 +783,14 @@ bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesire
   Telemetry::Quaternion broadcastQ;
 
   double yawInRad;
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
-    subscriptionQ = vehicle->subscribe->getValue<TOPIC_QUATERNION>();
+    subscriptionQ = mVehicle->subscribe->getValue<TOPIC_QUATERNION>();
     yawInRad = basictool.toEulerAngle((static_cast<void*>(&subscriptionQ))).z / DEG2RAD;
   }
   else
   {
-    broadcastQ = vehicle->broadcast->getQuaternion();
+    broadcastQ = mVehicle->broadcast->getQuaternion();
     yawInRad   = basictool.toEulerAngle((static_cast<void*>(&broadcastQ))).z / DEG2RAD;
   }
 
@@ -795,7 +805,7 @@ bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesire
   // while x and y are in relative
   float zDeadband = 0.12;
 
-  if (vehicle->isM100() || vehicle->isLegacyM600())
+  if (mVehicle->isM100() || mVehicle->isLegacyM600())
   {
     zDeadband = 0.12 * 10;
   }
@@ -821,7 +831,7 @@ bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesire
   else
     yCmd = 0;
 
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
     zCmd = currentBroadcastGP.height + zOffsetDesired; //Since subscription cannot give us a relative height, use broadcast.
   }
@@ -833,31 +843,31 @@ bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesire
   //! Main closed-loop receding setpoint position control
   while (elapsedTimeInMs < timeoutInMilSec)
   {
-    vehicle->control->positionAndYawCtrl(xCmd, yCmd, zCmd,
+    mVehicle->control->positionAndYawCtrl(xCmd, yCmd, zCmd,
                                          yawDesiredRad / DEG2RAD);
 
     usleep(cycleTimeInMs * 1000);
     elapsedTimeInMs += cycleTimeInMs;
 
     //! Get current position in required coordinates and units
-    if (!vehicle->isM100() && !vehicle->isLegacyM600())
+    if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
     {
-      subscriptionQ = vehicle->subscribe->getValue<TOPIC_QUATERNION>();
+      subscriptionQ = mVehicle->subscribe->getValue<TOPIC_QUATERNION>();
       yawInRad      = basictool.toEulerAngle((static_cast<void*>(&subscriptionQ))).z;
-      currentSubscriptionGPS = vehicle->subscribe->getValue<TOPIC_GPS_FUSED>();
-      localOffsetFromGpsOffset(vehicle, localOffset,
+      currentSubscriptionGPS = mVehicle->subscribe->getValue<TOPIC_GPS_FUSED>();
+      localOffsetFromGpsOffset(mVehicle, localOffset,
                                static_cast<void*>(&currentSubscriptionGPS),
                                static_cast<void*>(&originSubscriptionGPS));
 
       // Get the broadcast GP since we need the height for zCmd
-      currentBroadcastGP = vehicle->broadcast->getGlobalPosition();
+      currentBroadcastGP = mVehicle->broadcast->getGlobalPosition();
     }
     else
     {
-      broadcastQ         = vehicle->broadcast->getQuaternion();
+      broadcastQ         = mVehicle->broadcast->getQuaternion();
       yawInRad           = basictool.toEulerAngle((static_cast<void*>(&broadcastQ))).z;
-      currentBroadcastGP = vehicle->broadcast->getGlobalPosition();
-      localOffsetFromGpsOffset(vehicle, localOffset,
+      currentBroadcastGP = mVehicle->broadcast->getGlobalPosition();
+      localOffsetFromGpsOffset(mVehicle, localOffset,
                                static_cast<void*>(&currentBroadcastGP),
                                static_cast<void*>(&originBroadcastGP));
     }
@@ -877,7 +887,7 @@ bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesire
       yCmd = yOffsetRemaining;
     }
 
-    if (vehicle->isM100() && std::abs(xOffsetRemaining) < posThresholdInM &&
+    if (mVehicle->isM100() && std::abs(xOffsetRemaining) < posThresholdInM &&
         std::abs(yOffsetRemaining) < posThresholdInM &&
         std::abs(yawInRad - yawDesiredRad) < yawThresholdInRad)
     {
@@ -915,11 +925,11 @@ bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesire
 
   //! Set velocity to zero, to prevent any residual velocity from position
   //! command
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
     while (brakeCounter < withinControlBoundsTimeReqmt)
     {
-      vehicle->control->emergencyBrake();
+      mVehicle->control->emergencyBrake();
       usleep(cycleTimeInMs * 10);
       brakeCounter += cycleTimeInMs;
     }
@@ -928,10 +938,10 @@ bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesire
   if (elapsedTimeInMs >= timeoutInMilSec)
   {
     std::cout << "Task timeout!\n";
-    if (!vehicle->isM100() && !vehicle->isLegacyM600())
+    if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
     {
       ACK::ErrorCode ack =
-        vehicle->subscribe->removePackage(pkgIndex, responseTimeout);
+        mVehicle->subscribe->removePackage(pkgIndex, responseTimeout);
       if (ACK::getError(ack))
       {
         std::cout << "Error unsubscribing; please restart the drone/FC to get "
@@ -941,10 +951,10 @@ bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesire
     return ACK::FAIL;
   }
 
-  if (!vehicle->isM100() && !vehicle->isLegacyM600())
+  if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
     ACK::ErrorCode ack =
-      vehicle->subscribe->removePackage(pkgIndex, responseTimeout);
+      mVehicle->subscribe->removePackage(pkgIndex, responseTimeout);
     if (ACK::getError(ack))
     {
       std::cout
@@ -955,6 +965,3 @@ bool SerialInterface::moveByPositionOffset(Vehicle *vehicle, float xOffsetDesire
 
   return ACK::SUCCESS;
 }
-
-
-
