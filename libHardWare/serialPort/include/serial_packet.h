@@ -3,7 +3,6 @@
 #ifndef DJIOSDK_TELEMETRYSAMPLE_HPP
 #define DJIOSDK_TELEMETRYSAMPLE_HPP
 #include <dji_vehicle.hpp>
-#include <dji_linux_helpers.hpp>
 using namespace DJI::OSDK;
 using namespace DJI::OSDK::Telemetry;
 

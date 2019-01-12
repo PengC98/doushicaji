@@ -13,14 +13,13 @@
 #include <iostream>
 #include "control_model.h"
 #include "serial_listen_thread.h"
-#include "serial_port_debug.h"
-
+#include <stdlib.h>
 using  namespace std;
 
 int main(int argc, char** argv){
     RobotModel robotModel;
     cout<<"[robot init]robot model start to initialize!"<<endl;
-    robotModel.init();
+    robotModel.init(argc, argv);
     cout<<"[robot init]robot control model start to initializ!"<<endl;
     usleep(10000);
     ControlModel controlModel;

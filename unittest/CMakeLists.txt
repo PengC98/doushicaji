@@ -1,0 +1,2 @@
+add_subdirectory(realsense_test)
+add_subdirectory(serial_test)

@@ -9,7 +9,8 @@ SerialInterface::~SerialInterface(void) {
 
 };
 
-int SerialInterface::init(LinuxSetup linuxEnvironment){
+int SerialInterface::init(int argc, char** argv){
+    LinuxSetup linuxEnvironment(argc, argv);
     mVehicle = linuxEnvironment.getVehicle();
     if(mVehicle==NULL){
         return -1;
@@ -17,7 +18,6 @@ int SerialInterface::init(LinuxSetup linuxEnvironment){
         return 0;
     }
 }
-
 
 int SerialInterface::dataRecv(SerialPacket &recvPacket){
     int responseTimeout=1;
@@ -786,12 +786,12 @@ bool SerialInterface::moveByPositionOffset_block( float xOffsetDesired,
   if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
   {
     subscriptionQ = mVehicle->subscribe->getValue<TOPIC_QUATERNION>();
-    yawInRad = basictool.toEulerAngle((static_cast<void*>(&subscriptionQ))).z / DEG2RAD;
+    yawInRad = basictool.toEulerAngle(subscriptionQ).z / DEG2RAD;
   }
   else
   {
     broadcastQ = mVehicle->broadcast->getQuaternion();
-    yawInRad   = basictool.toEulerAngle((static_cast<void*>(&broadcastQ))).z / DEG2RAD;
+    yawInRad   = basictool.toEulerAngle(broadcastQ).z / DEG2RAD;
   }
 
   int   elapsedTimeInMs     = 0;
@@ -853,7 +853,7 @@ bool SerialInterface::moveByPositionOffset_block( float xOffsetDesired,
     if (!mVehicle->isM100() && !mVehicle->isLegacyM600())
     {
       subscriptionQ = mVehicle->subscribe->getValue<TOPIC_QUATERNION>();
-      yawInRad      = basictool.toEulerAngle((static_cast<void*>(&subscriptionQ))).z;
+      yawInRad      = basictool.toEulerAngle(subscriptionQ).z;
       currentSubscriptionGPS = mVehicle->subscribe->getValue<TOPIC_GPS_FUSED>();
       localOffsetFromGpsOffset(mVehicle, localOffset,
                                static_cast<void*>(&currentSubscriptionGPS),
@@ -865,7 +865,7 @@ bool SerialInterface::moveByPositionOffset_block( float xOffsetDesired,
     else
     {
       broadcastQ         = mVehicle->broadcast->getQuaternion();
-      yawInRad           = basictool.toEulerAngle((static_cast<void*>(&broadcastQ))).z;
+      yawInRad           = basictool.toEulerAngle(broadcastQ).z;
       currentBroadcastGP = mVehicle->broadcast->getGlobalPosition();
       localOffsetFromGpsOffset(mVehicle, localOffset,
                                static_cast<void*>(&currentBroadcastGP),

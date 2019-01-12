@@ -10,10 +10,8 @@
 ///@date: 18-11-6
 ///修订历史：
 ////////////////////////////////////////////////////////////////////////////////
-#include "image_tool.h"
 #include "control_model.h"
 #include "basic_tool.h"
-#include "serial_port_debug.h"
 #include "usb_capture_with_thread.h"
 using namespace cv;
 
@@ -23,12 +21,10 @@ ControlModel::~ControlModel(){}
 
 void ControlModel::init(RobotModel* robotModel){
     pRobotModel=robotModel;
-    autoAim = new AutoAim(1280, 720`);
     //配置文件
-    f.release();
     usleep(1000000);//等待1s，等摄像头稳定
     //初始模式初始化
-    mSetMode=ROBOT_MODE_AUTOAIM;
+    mSetMode=ROBOT_MODE_TRACKBALL;
 }
 
 //串口数据接收处理入口
@@ -38,8 +34,56 @@ void ControlModel::serialListenDataProcess(SerialPacket recvPacket) {
 }
 
 void ControlModel::processFSM(){
-    //控制部分
+    //模式切换预处理
+    if(mSetMode!=pRobotModel->getCurrentMode()){
+        pRobotModel->setCurrentMode(mSetMode);
+        switch (mSetMode){
+            case ROBOT_MODE_TRACKBALL:{
+                pid_x.init(0.001,0,0,0.0f,3,0,AUTOMATIC,DIRECT);
+                pid_y.init(0.001,0,0,0.0f,3,0,AUTOMATIC,DIRECT);
+                pid_z.init(0.001,0,0,0.0f,3,0,AUTOMATIC,DIRECT);
+                pid_x.PIDSetpointSet(0);
+                pid_y.PIDSetpointSet(0);
+                pid_z.PIDSetpointSet(1000);
+                cout<<"[control model mode ]:Switch to BALL TRACKING Mode!"<<endl;
+                break;
+            }
+            case ROBOT_MODE_RETURN:{
+                cout<<"[control model mode ]:Switch to RETURN Mode!"<<endl;
+            }
+        }
+    }
+
+    switch(pRobotModel->getCurrentMode()){
+        case ROBOT_MODE_TRACKBALL:{
+            trackBall();
+            break;
+        }
+        case ROBOT_MODE_RETURN:{
+
+            break;
+        }
+        
+    }
 
 }
+
+void ControlModel::trackBall(){
+    RealsenseInterface* cap = pRobotModel->getRealsenseCpature();
+    SerialInterface* interface = pRobotModel->getpSerialInterface();
+    Mat src;
+    Point3f distance;
+    distance.x = distance .y = distance.z = 0xff;
+    if(cap->getDepthImg(src) == 0){
+        distance = ball_aim.getDistance(src);
+        pid_x.PIDInputSet(distance.x);
+        pid_y.PIDInputSet(distance.y);
+        pid_z.PIDInputSet(distance.z);
+        float velocity_x = pid_x.PIDOutputGet();
+        float velocity_y = pid_y.PIDOutputGet();
+        float velocity_z = pid_z.PIDOutputGet();
+        interface->movebyVelocity(velocity_x,velocity_y,velocity_z,0);   
+    }
+
 
 }

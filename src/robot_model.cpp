@@ -33,12 +33,16 @@ int RobotModel::init(int argc, char** argv){
     f["capture_path"] >> videoPath;//机器人摄像头路径
     f.release();
     //初始化串口
-    LinuxSetup linuxEnvironment(argc, argv);
-    if(mSerialInterface.init(linuxEnvironment)==0) {
+    
+    if(mSerialInterface.init(argc,argv)==0) {
         cout<<"[robot model init ]: RobotSerialInterface init successed!"<<endl;
         //mSerialPort.ShowParam();
     } else{
         cout<<"[robot model init ]: RobotSerialInterface init failed!"<<endl;
+    }
+    if(mRealsense.init(640,480) == 0){
+        cout << "[robot model init ]:RealsenseCapture init successed!" <<endl;
+        usleep(1000000);
     }
      //初始化摄像头
     if(mUsbCapture.init("/dev/Video",1280,720)==0){
@@ -46,9 +50,9 @@ int RobotModel::init(int argc, char** argv){
         usleep(1000000);//等待1s
         //mUsbCapture.infoPrint();
     }else{
-        cout << "[robot model init ]:UsbCapture init failed!" <<endl;
+        cout << "[robot model init ]:UsbCapture init failed! No UsbCapture" <<endl;
     }
-    mCurrentMode=ROBOT_MODE_MARKAIM;
+    mCurrentMode=ROBOT_MODE_EMPTY;
 
 }
 
@@ -59,6 +63,22 @@ unsigned char RobotModel::getRobotId(){
 
 UsbCaptureWithThread* RobotModel::getpUsbCapture() {
     return &mUsbCapture;
+}
+
+RealsenseInterface* RobotModel::getRealsenseCpature(){
+    return &mRealsense;
+}
+
+void RobotModel::setCurrentMode(RobotMode robotMode) {
+    mCurrentMode=robotMode;
+}
+SerialInterface* RobotModel::getpSerialInterface(){//add define
+    return &mSerialInterface;
+}
+
+
+RobotMode RobotModel::getCurrentMode() {
+    return mCurrentMode;
 }
 
 
@@ -76,9 +96,9 @@ void RobotModel::DataUpdate(SerialPacket recv_packet){
 Point3f RobotModel::getCurrentVelocity(){
     Point3f tmp;
     pthread_mutex_lock(&dataMutex);//加锁
-    tmp.x = mVelocity.x;
-    tmp.y = mVelocity.y;
-    tmp.z = mVelocity.z;
+    tmp.x = mVelocity.data.x;
+    tmp.y = mVelocity.data.y;
+    tmp.z = mVelocity.data.z;
     pthread_mutex_unlock(&dataMutex);
 }
 Point3f RobotModel::getCurrentAngle(){

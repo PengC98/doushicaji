@@ -38,7 +38,7 @@ public:
     *  @param:  std::string devPath :串口设备路径
     *  @return: int :错误号，0代表无错误，１代表发生错误。
     */
-    int init(LinuxSetup linuxEnvironment);
+    int init(int argc, char** argv);
     //查询串口是否打开
     bool isOpen();
 
