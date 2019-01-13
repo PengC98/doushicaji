@@ -3,9 +3,8 @@
 // DJI OSDK includes
 #include "dji_status.hpp"
 #include <dji_vehicle.hpp>
-
+#include <iostream>
 // Helpers
-#include <dji_linux_helpers.hpp>
 #include "basic_tool.h"
 #ifndef RMDEMO_SERIAL_INTERFACE_H
 #define RMDEMO_SERIAL_INTERFACE_H
@@ -27,8 +26,8 @@ typedef enum:unsigned char {
 class SerialInterface
 {
 public:
-    SerialInterface(void);
-    ~SerialInterface(void);
+    SerialInterface();
+    ~SerialInterface();
 
 private:
     Vehicle*   mVehicle;
@@ -38,7 +37,7 @@ public:
     *  @param:  std::string devPath :串口设备路径
     *  @return: int :错误号，0代表无错误，１代表发生错误。
     */
-    int init(int argc, char** argv);
+    int init(Vehicle* vehicle);
     //查询串口是否打开
     bool isOpen();
 

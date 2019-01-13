@@ -44,12 +44,17 @@ void ControlModel::processFSM(){
                 pid_z.init(0.001,0,0,0.0f,3,0,AUTOMATIC,DIRECT);
                 pid_x.PIDSetpointSet(0);
                 pid_y.PIDSetpointSet(0);
-                pid_z.PIDSetpointSet(1000);
+                pid_z.PIDSetpointSet(500);
                 cout<<"[control model mode ]:Switch to BALL TRACKING Mode!"<<endl;
                 break;
             }
             case ROBOT_MODE_RETURN:{
                 cout<<"[control model mode ]:Switch to RETURN Mode!"<<endl;
+                break;
+            }
+            case ROBOT_MODE_EMPTY:{
+                cout<<"[control model mode ]:Do Nothing"<<endl;
+                break;
             }
         }
     }
@@ -82,7 +87,10 @@ void ControlModel::trackBall(){
         float velocity_x = pid_x.PIDOutputGet();
         float velocity_y = pid_y.PIDOutputGet();
         float velocity_z = pid_z.PIDOutputGet();
-        interface->movebyVelocity(velocity_x,velocity_y,velocity_z,0);   
+        if(abs(distance.x)<50&&abs(distance.y)<50)
+            interface->movebyVelocity(velocity_x,velocity_y,velocity_z,0);
+        else interface->movebyVelocity(velocity_x,velocity_y,0,0);
+        if(distance.z<800)  cout<<"收网!!!!"<<endl;
     }
 
 

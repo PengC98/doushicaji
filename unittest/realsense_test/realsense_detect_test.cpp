@@ -10,14 +10,18 @@ int main(){
         usleep(1000000);
     }
     Mat src;
+    Mat color;
     while(true){
         if(realsense.getDepthImg(src) == 0){
+            realsense.getColorImg(color);
             cv::Point3f distance = ball_aim.getDistance(src);
             cout<<"distance z "<<distance.z<<endl;
             cout<<"distance x "<<distance.x<<endl;
             cout<<"distance y "<<distance.y<<endl;
             imshow("depth", src);
-            waitKey(1);
+            imshow("color",color);
+            waitKey(5);
         }
+        else cout<<"error"<<endl;
     }
 }

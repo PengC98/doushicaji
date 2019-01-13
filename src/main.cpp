@@ -12,14 +12,19 @@
 
 #include <iostream>
 #include "control_model.h"
+#include "robot_model.h"
 #include "serial_listen_thread.h"
 #include <stdlib.h>
+#include <dji_linux_helpers.hpp>
 using  namespace std;
 
 int main(int argc, char** argv){
     RobotModel robotModel;
+    LinuxSetup linuxEnvironment(argc,argv);
+    Vehicle*   vehicle;
+    vehicle = linuxEnvironment.getVehicle();
     cout<<"[robot init]robot model start to initialize!"<<endl;
-    robotModel.init(argc, argv);
+    robotModel.init(vehicle);
     cout<<"[robot init]robot control model start to initializ!"<<endl;
     usleep(10000);
     ControlModel controlModel;

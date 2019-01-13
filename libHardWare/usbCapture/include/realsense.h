@@ -44,6 +44,10 @@ class RealsenseInterface:public BaseThread{
         int getDepthImg(Mat &img);
 
     private:
+        rs2::spatial_filter spat;
+        
+        rs2::disparity_transform depth2disparity;
+        rs2::decimation_filter dec;
         rs2::pipeline pipe_color;
         rs2::pipeline pipe_depth;
         bool isOpen;
@@ -56,6 +60,7 @@ class RealsenseInterface:public BaseThread{
         int depth_img_height;
         Mat color_img;
         Mat depth_img;
+        rs2::colorizer color_map;
 
 
 };

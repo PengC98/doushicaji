@@ -36,7 +36,7 @@ ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/unittest)
 add_executable(example ${DIR_SRCS})
 
 target_link_libraries(example Base)
-target_link_libraries(example SerialPort UsbCapture)
+target_link_libraries(example SerialPort UsbCapture LinuxHelper)
 target_link_libraries(example pthread)
 target_link_libraries(example Detection)
 target_link_libraries(example Pid)

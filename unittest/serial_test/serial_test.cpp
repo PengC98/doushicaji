@@ -1,15 +1,22 @@
 #include "serial_packet.h"
 #include "serial_interface.h"
 #include <iostream>
+#include <dji_linux_helpers.hpp>
+#include "dji_status.hpp"
+#include <dji_vehicle.hpp>
 using namespace std;
 using namespace DJI::OSDK;
 using namespace DJI::OSDK::Telemetry;
 
 int main(int argc, char** argv)
 {
+    LinuxSetup linuxEnvironment(argc, argv);
+    Vehicle* vehicle;
+    vehicle = linuxEnvironment.getVehicle();
     cout<<"start to test serial port,press 'c' to continue,press 'q' to quit!"<<endl;
     char c=getchar();
     cout<<"===========串口测试==========="<<endl;
+
     cout<<"w:           1m/s x轴"<<endl;
     cout<<"s:           -1m/s x轴"<<endl;
     cout<<"a:           1m/s  y轴"<<endl;
@@ -25,14 +32,19 @@ int main(int argc, char** argv)
     cout<<"m:             -1m z轴"<<endl;
     SerialInterface serial;
     SerialPacket packet;
-    if(serial.init(argc,argv)==0) {
-        cout<<"[robot model init ]: RobotSerialInterface init successed!"<<endl;
-    } else{
-        cout<<"[robot model init ]: RobotSerialInterface init failed!"<<endl;
-    }
-    while(c!='q'){
+    
+    if(serial.init(vehicle)==0) {
+         cout<<"[robot model init ]: RobotSerialInterface init successed!"<<endl;
+     } else{
+         cout<<"[robot model init ]: RobotSerialInterface init failed!"<<endl;
+     }
+    while(true){
         c = getchar();
         switch(c){
+            case 'n':
+                cout<<"takeoff"<<endl;
+                serial.Takeoff(10);
+                break;
             case 'w':
                 cout<<"movebyVelocity(1,0,0,0)"<<endl;
                 serial.movebyVelocity(1.0,0,0,0);
@@ -52,7 +64,12 @@ int main(int argc, char** argv)
                 cout<<"movebyVelocity(0,-1.0,0,0)"<<endl;
                 serial.movebyVelocity(0,-1.0,0,0);
                 cout<<"please input..."<<endl;
-                break;               
+                break;           
+            case 'q':
+                cout<<"movebyVelocity(0,0.0,2,0)"<<endl;
+                serial.movebyVelocity(0,0.0,2,0);
+                cout<<"please input..."<<endl;
+                break;     
             case 'x':
                 cout<<"get message "<<endl;
                 serial.dataRecv(packet);

@@ -10,6 +10,7 @@
 #include <dji_vehicle.hpp>
 
 // Helpers
+#include <dji_linux_helpers.hpp>
 #include "realsense.h"
 using namespace DJI::OSDK;
 using namespace DJI::OSDK::Telemetry;
@@ -25,11 +26,12 @@ public:
     RobotModel();
     ~RobotModel();
 public:
-    int init(int argc, char** argv);
+    int init(Vehicle* vehicle);
 
 private://硬件资源
     UsbCaptureWithThread mUsbCapture;
     RealsenseInterface mRealsense;
+    Vehicle* mRvehicle;
     SerialInterface mSerialInterface;
     
 

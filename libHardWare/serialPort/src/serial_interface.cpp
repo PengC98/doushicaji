@@ -1,17 +1,16 @@
 #include "serial_interface.h"
 
 SerialInterface::SerialInterface(){
-
 };
 
 
-SerialInterface::~SerialInterface(void) {
+SerialInterface::~SerialInterface() {
 
 };
 
-int SerialInterface::init(int argc, char** argv){
-    LinuxSetup linuxEnvironment(argc, argv);
-    mVehicle = linuxEnvironment.getVehicle();
+int SerialInterface::init(Vehicle* vehicle){
+    mVehicle = vehicle;
+    mVehicle->obtainCtrlAuthority(1);
     if(mVehicle==NULL){
         return -1;
     }else{
@@ -242,7 +241,7 @@ bool SerialInterface::Takeoff( int timeout)
       ACK::getErrorCodeMessage(subscribeStatus, func);
       return false;
     }
-
+    
     // Telemetry: Subscribe to flight status and mode at freq 10 Hz
     pkgIndex                  = 0;
     int       freq            = 10;
@@ -266,9 +265,10 @@ bool SerialInterface::Takeoff( int timeout)
       return false;
     }
   }
-
+  
   // Start takeoff
   ACK::ErrorCode takeoffStatus = mVehicle->control->takeoff(timeout);
+  
   if (ACK::getError(takeoffStatus) != ACK::SUCCESS)
   {
     ACK::getErrorCodeMessage(takeoffStatus, func);

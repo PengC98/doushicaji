@@ -5,7 +5,7 @@ RealsenseInterface::RealsenseInterface(){
 
 };
 RealsenseInterface::~RealsenseInterface(){};
-
+rs2::align align_to(RS2_STREAM_DEPTH);
 int RealsenseInterface::init(){
 
     rs2::config cfg_color;  //新建config类的对象 for color img
@@ -14,6 +14,15 @@ int RealsenseInterface::init(){
     cfg_depth.enable_stream(RS2_STREAM_DEPTH, depth_img_width, depth_img_height, RS2_FORMAT_Z16, 60);  //depth stream
     pipe_color.start(cfg_color);
     pipe_depth.start(cfg_depth);
+    
+    spat.set_option(RS2_OPTION_HOLES_FILL, 5);
+    
+    
+    // If the demo is too slow, make sure you run in Release (-DCMAKE_BUILD_TYPE=Release)
+    // but you can also increase the following parameter to decimate depth more (reducing quality)
+    dec.set_option(RS2_OPTION_FILTER_MAGNITUDE, 2);
+    // Define transformations from and to Disparity domain
+
     return 0;
 }
 
@@ -41,7 +50,7 @@ int RealsenseInterface::readColorImg(){
     }
     catch (const rs2::error & e)
     {
-        std::cerr << "RealSense error calling " << e.get_failed_function() << "(" << e.get_failed_args() << "):\n    " << e.what() << std::endl;
+        std::cerr << "RealSense color error calling " << e.get_failed_function() << "(" << e.get_failed_args() << "):\n    " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
     catch (const std::exception& e)
@@ -54,11 +63,31 @@ int RealsenseInterface::readColorImg(){
 int RealsenseInterface::readDepthImg(){
     try{
         rs2::frameset depth_data = pipe_depth.wait_for_frames();
-        rs2::frame depth = depth_data.get_color_frame();
-        Mat depth_tmp(Size(depth_img_width, depth_img_height),CV_16UC1,(void*)depth.get_data(),Mat::AUTO_STEP);
+        // depth_data.apply_filter(align_to)
+        //             .apply_filter(dec)
+        //             .apply_filter(depth2disparity)
+        //             .apply_filter(spat)
+                    //depth_data.apply_filter(color_map);
+        rs2::frame depth = depth_data.get_depth_frame().apply_filter(spat);
+        const int w = depth.as<rs2::video_frame>().get_width();
+        const int h = depth.as<rs2::video_frame>().get_height();
+        Mat depth_tmp(Size(w, h),CV_16UC1,(void*)depth.get_data(),Mat::AUTO_STEP);
+        cv::resize(depth_tmp,depth_tmp,cv::Size(depth_img_width,depth_img_height));
+        // cv::cvtColor(depth_tmp,depth_tmp,CV_RGB2GRAY);
+        // for (int i = 0; i < depth_tmp.rows; ++i) {
+        //     for (int j = 0; j < depth_tmp.cols; ++j){
+        //         if(depth_tmp.at<u_char>(i, j)<=50){
+        //             depth_tmp.at<u_char>(i, j)=0;
+        //         } else{
+        //             depth_tmp.at<u_char>(i, j)=255;
+        //         }
+        //     }
+        // }
+        // cv::cvtColor(depth_tmp,depth_tmp,CV_GRAY2RGB);
         pthread_mutex_lock(&imgMutex);
         depth_tmp.copyTo(depth_img);//写入color_img,加锁
         pthread_mutex_unlock(&imgMutex);
+        isDepthImgUpdate = true;
         return EXIT_SUCCESS;
     }
     catch (const rs2::error & e)
@@ -113,7 +142,7 @@ int RealsenseInterface::getDepthImg(Mat &img){
     depth_img.copyTo(img);//读mImg,加锁
     pthread_mutex_unlock(&imgMutex);
     if(!img.empty()&&(img.cols==depth_img_width)&&(img.rows==depth_img_height)){
-        isColorImgUpdate= false;
+        isDepthImgUpdate= false;
         return 0;
     } else{
         return -1;

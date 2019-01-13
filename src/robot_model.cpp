@@ -24,7 +24,8 @@ RobotModel::~RobotModel() {
 
 }
 
-int RobotModel::init(int argc, char** argv){
+int RobotModel::init(Vehicle* vehicle){
+    mRvehicle = vehicle;
     string serialPath,videoPath;
     //配置文件
     cv::FileStorage f("../res/main_config.yaml", cv::FileStorage::READ);
@@ -34,7 +35,7 @@ int RobotModel::init(int argc, char** argv){
     f.release();
     //初始化串口
     
-    if(mSerialInterface.init(argc,argv)==0) {
+    if(mSerialInterface.init(mRvehicle)==0) {
         cout<<"[robot model init ]: RobotSerialInterface init successed!"<<endl;
         //mSerialPort.ShowParam();
     } else{
@@ -45,13 +46,13 @@ int RobotModel::init(int argc, char** argv){
         usleep(1000000);
     }
      //初始化摄像头
-    if(mUsbCapture.init("/dev/Video",1280,720)==0){
-        cout << "[robot model init ]:UsbCapture init successed!" <<endl;
-        usleep(1000000);//等待1s
-        //mUsbCapture.infoPrint();
-    }else{
-        cout << "[robot model init ]:UsbCapture init failed! No UsbCapture" <<endl;
-    }
+    // if(mUsbCapture.init("/dev/Video",1280,720)==0){
+    //     cout << "[robot model init ]:UsbCapture init successed!" <<endl;
+    //     usleep(1000000);//等待1s
+    //     //mUsbCapture.infoPrint();
+    // }else{
+    //     cout << "[robot model init ]:UsbCapture init failed! No UsbCapture" <<endl;
+    // }
     mCurrentMode=ROBOT_MODE_EMPTY;
 
 }

@@ -16,7 +16,13 @@ Point3f Aim_ball::getDistance(Mat depth){
     Point3f distance;
     for(int i = 0; i <depth.rows; i++){
         for(int j = 0; j < depth.cols; j++){
-            if(depth.at<ushort>(i,j) < depth.at<ushort>(a,b) && (depth.at<ushort>(i,j) > 100 && depth.at<ushort>(a,b) > 100)){
+            if(depth.at<ushort>(i,j)==0) continue;
+            if(depth.at<ushort>(a,b)==0){
+                a++;
+                b++;
+                continue;
+            }
+            if(depth.at<ushort>(i,j) < depth.at<ushort>(a,b)){
                 a = i;
                 b = j;
             }
