@@ -34,11 +34,6 @@ int main(int argc, char** argv){
     serialListenThread.init(&robotModel,&controlModel);
     serialListenThread.start();
     cout<<"[robot init]robot init end!"<<endl;
-    //debug模块
-    //SerialPortDebug serialPortDebug;
-    //serialPortDebug.init(robotModel.getpSerialInterface());
-    //serialPortDebug.testSerialPort();
-    //主逻辑
     while(true){
         controlModel.processFSM();
     }

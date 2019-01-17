@@ -16,7 +16,7 @@ class RealsenseInterface:public BaseThread{
         int init();
 
         //读取彩色图片
-        int readColorImg();
+        int readRealsenseImg();
 
         //读取深度图片
         int readDepthImg();
@@ -48,7 +48,7 @@ class RealsenseInterface:public BaseThread{
         
         rs2::disparity_transform depth2disparity;
         rs2::decimation_filter dec;
-        rs2::pipeline pipe_color;
+        rs2::pipeline pipe;
         rs2::pipeline pipe_depth;
         bool isOpen;
         bool isColorImgUpdate;
@@ -61,7 +61,7 @@ class RealsenseInterface:public BaseThread{
         Mat color_img;
         Mat depth_img;
         rs2::colorizer color_map;
-
+        
 
 };
 #endif
